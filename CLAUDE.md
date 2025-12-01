@@ -8,42 +8,47 @@ LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively
 
 ## Architecture
 
-### Backend Structure (`backend/`)
+### Backend Structure (`backend-ts/`)
 
-**`config.py`**
+**`src/config.ts`**
 - Contains `COUNCIL_MODELS` (list of OpenRouter model identifiers)
 - Contains `CHAIRMAN_MODEL` (model that synthesizes final answer)
 - Uses environment variable `OPENROUTER_API_KEY` from `.env`
-- Backend runs on **port 8001** (NOT 8000 - user had another app on 8000)
+- Backend runs on **port 8001**
 
-**`openrouter.py`**
-- `query_model()`: Single async model query
-- `query_models_parallel()`: Parallel queries using `asyncio.gather()`
-- Returns dict with 'content' and optional 'reasoning_details'
-- Graceful degradation: returns None on failure, continues with successful responses
+**`src/openrouter.ts`**
+- `queryModel()`: Single async model query using undici fetch
+- `queryModelsParallel()`: Parallel queries using `Promise.all()`
+- Returns object with 'content' and optional 'reasoning_details'
+- Graceful degradation: returns null on failure, continues with successful responses
+- Proper error handling for HTTP errors, timeouts, and unexpected errors
 
-**`council.py`** - The Core Logic
-- `stage1_collect_responses()`: Parallel queries to all council models
-- `stage2_collect_rankings()`:
+**`src/council.ts`** - The Core Logic
+- `stage1CollectResponses()`: Parallel queries to all council models
+- `stage2CollectRankings()`:
   - Anonymizes responses as "Response A, B, C, etc."
   - Creates `label_to_model` mapping for de-anonymization
   - Prompts models to evaluate and rank (with strict format requirements)
-  - Returns tuple: (rankings_list, label_to_model_dict)
+  - Returns tuple: [rankings_list, label_to_model_dict]
   - Each ranking includes both raw text and `parsed_ranking` list
-- `stage3_synthesize_final()`: Chairman synthesizes from all responses + rankings
-- `parse_ranking_from_text()`: Extracts "FINAL RANKING:" section, handles both numbered lists and plain format
-- `calculate_aggregate_rankings()`: Computes average rank position across all peer evaluations
+- `stage3SynthesizeFinal()`: Chairman synthesizes from all responses + rankings
+  - Includes fallback to other council models if chairman fails
+- `parseRankingFromText()`: Extracts "FINAL RANKING:" section, handles both numbered lists and plain format
+- `calculateAggregateRankings()`: Computes average rank position across all peer evaluations
 
-**`storage.py`**
+**`src/storage.ts`**
 - JSON-based conversation storage in `data/conversations/`
-- Each conversation: `{id, created_at, messages[]}`
-- Assistant messages contain: `{role, stage1, stage2, stage3}`
+- Uses Node.js `fs/promises` for async file operations
+- Each conversation: `{id, created_at, title, messages[]}`
+- Assistant messages contain: `{role, stage1, stage2, stage3, timestamp}`
 - Note: metadata (label_to_model, aggregate_rankings) is NOT persisted to storage, only returned via API
 
-**`main.py`**
-- FastAPI app with CORS enabled for localhost:5173 and localhost:3000
+**`src/main.ts`**
+- Fastify app with CORS enabled for localhost:5173 and localhost:3000
 - POST `/api/conversations/{id}/message` returns metadata in addition to stages
+- POST `/api/conversations/{id}/message/stream` provides SSE streaming
 - Metadata includes: label_to_model mapping and aggregate_rankings
+- Uses Zod for request validation (replaces Pydantic from Python version)
 
 ### Frontend Structure (`frontend/src/`)
 
@@ -93,7 +98,7 @@ This strict format allows reliable parsing while still getting thoughtful evalua
 
 ### De-anonymization Strategy
 - Models receive: "Response A", "Response B", etc.
-- Backend creates mapping: `{"Response A": "openai/gpt-5.1", ...}`
+- Backend creates mapping: `{"Response A": "openai/gpt-4o-mini", ...}`
 - Frontend displays model names in **bold** for readability
 - Users see explanation that original evaluation used anonymous labels
 - This prevents bias while maintaining transparency
@@ -102,6 +107,7 @@ This strict format allows reliable parsing while still getting thoughtful evalua
 - Continue with successful responses if some models fail (graceful degradation)
 - Never fail the entire request due to single model failure
 - Log errors but don't expose to user unless all models fail
+- Stage 3 includes automatic fallback to other council models if chairman fails
 
 ### UI/UX Transparency
 - All raw outputs are inspectable via tabs
@@ -111,31 +117,38 @@ This strict format allows reliable parsing while still getting thoughtful evalua
 
 ## Important Implementation Details
 
-### Relative Imports
-All backend modules use relative imports (e.g., `from .config import ...`) not absolute imports. This is critical for Python's module system to work correctly when running as `python -m backend.main`.
+### TypeScript Compilation
+- Uses `tsgo` (Microsoft's Go-based TypeScript compiler) for fast compilation
+- Standard `tsc` available as fallback with `npm run build:tsc`
+- Development uses `tsx` for hot reload without compilation
+- Production build outputs to `dist/` directory
 
 ### Port Configuration
-- Backend: 8001 (changed from 8000 to avoid conflict)
+- Backend: 8001
 - Frontend: 5173 (Vite default)
-- Update both `backend/main.py` and `frontend/src/api.js` if changing
+- Update both `backend-ts/src/main.ts` and `frontend/src/api.js` if changing
 
 ### Markdown Rendering
 All ReactMarkdown components must be wrapped in `<div className="markdown-content">` for proper spacing. This class is defined globally in `index.css`.
 
 ### Model Configuration
-Models are hardcoded in `backend/config.py`. Chairman can be same or different from council members. The current default is Gemini as chairman per user preference.
+Models are configured in `backend-ts/src/config.ts`. Chairman can be same or different from council members. The current default is Gemini as chairman.
+
+### Data Compatibility
+The TypeScript backend maintains 100% compatibility with existing JSON conversation files. No migration needed.
 
 ## Common Gotchas
 
-1. **Module Import Errors**: Always run backend as `python -m backend.main` from project root, not from backend directory
-2. **CORS Issues**: Frontend must match allowed origins in `main.py` CORS middleware
+1. **Module Import Errors**: Use ES module imports with `.js` extension (TypeScript requirement)
+2. **CORS Issues**: Frontend must match allowed origins in `main.ts` CORS configuration
 3. **Ranking Parse Failures**: If models don't follow format, fallback regex extracts any "Response X" patterns in order
 4. **Missing Metadata**: Metadata is ephemeral (not persisted), only available in API responses
+5. **SSE Streaming**: Fastify SSE implementation uses raw response streams, format must match Python version exactly
 
 ## Future Enhancement Ideas
 
 - Configurable council/chairman via UI instead of config file
-- Streaming responses instead of batch loading
+- Enhanced streaming with progress indicators
 - Export conversations to markdown/PDF
 - Model performance analytics over time
 - Custom ranking criteria (not just accuracy/insight)
@@ -143,7 +156,7 @@ Models are hardcoded in `backend/config.py`. Chairman can be same or different f
 
 ## Testing Notes
 
-Use `test_openrouter.py` to verify API connectivity and test different model identifiers before adding to council. The script tests both streaming and non-streaming modes.
+Test API connectivity by checking health endpoint: `curl http://localhost:8001/`
 
 ## Data Flow Summary
 
@@ -156,7 +169,7 @@ Stage 2: Anonymize → Parallel ranking queries → [evaluations + parsed rankin
     ↓
 Aggregate Rankings Calculation → [sorted by avg position]
     ↓
-Stage 3: Chairman synthesis with full context
+Stage 3: Chairman synthesis with full context (with fallback)
     ↓
 Return: {stage1, stage2, stage3, metadata}
     ↓
@@ -164,3 +177,7 @@ Frontend: Display with tabs + validation UI
 ```
 
 The entire flow is async/parallel where possible to minimize latency.
+
+## Migration Notes
+
+The backend was migrated from Python (FastAPI) to TypeScript (Fastify) while maintaining 100% API compatibility. All logic, error handling, and data structures remain identical.
