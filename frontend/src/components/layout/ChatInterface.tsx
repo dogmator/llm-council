@@ -98,8 +98,8 @@ export default function ChatInterface({
                   {msg.stage2 && msg.stage2.length > 0 && (
                     <Stage2
                       rankings={msg.stage2}
-                      labelToModel={msg.metadata?.label_to_model}
-                      aggregateRankings={msg.metadata?.aggregate_rankings}
+                      {...(msg.metadata?.label_to_model && { labelToModel: msg.metadata.label_to_model })}
+                      {...(msg.metadata?.aggregate_rankings && { aggregateRankings: msg.metadata.aggregate_rankings })}
                     />
                   )}
 
