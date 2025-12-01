@@ -838,7 +838,7 @@ uv run python test_model.py
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 ```
-![map](docs/mind-map.png)
+![map](mind-map.png)
 ---
 
 <div align="center">
