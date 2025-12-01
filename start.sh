@@ -7,8 +7,10 @@ echo ""
 
 # Start backend
 echo "Starting backend on http://localhost:8001..."
-uv run python -m backend.main &
+cd backend-ts
+npm run dev &
 BACKEND_PID=$!
+cd ..
 
 # Wait a bit for backend to start
 sleep 2
@@ -18,6 +20,7 @@ echo "Starting frontend on http://localhost:5173..."
 cd frontend
 npm run dev &
 FRONTEND_PID=$!
+cd ..
 
 echo ""
 echo "✓ LLM Council is running!"

@@ -1,0 +1,36 @@
+{
+  "name": "llm-council-backend",
+  "version": "0.1.0",
+  "description": "LLM Council TypeScript Backend",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsgo",
+    "build:tsc": "tsc",
+    "build:fast": "esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/main.js --format=cjs --external:fastify --external:@fastify/cors --external:dotenv --external:undici --external:zod",
+    "start": "node dist/main.js",
+    "type-check": "tsgo --noEmit"
+  },
+  "keywords": [
+    "llm",
+    "council",
+    "fastify",
+    "typescript"
+  ],
+  "author": "LLM Council",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^8.4.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3",
+    "undici": "^5.28.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@typescript/native-preview": "^7.0.0-dev.20251201.1",
+    "esbuild": "^0.27.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,42 @@
+{
+    "name": "llm-council",
+    "private": true,
+    "version": "0.1.0",
+    "description": "Your LLM Council - Multiple AI models collaborating",
+    "scripts": {
+        "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run backend:dev\" \"npm run frontend:dev\"",
+        "backend:dev": "cd backend-ts && npm run dev",
+        "frontend:dev": "cd frontend && npm run dev",
+        "backend:start": "cd backend-ts && npm run start",
+        "frontend:start": "cd frontend && npm run dev",
+        "start": "chmod +x start.sh && ./start.sh",
+        "install:all": "cd backend-ts && npm install && cd ../frontend && npm install",
+        "install:backend": "cd backend-ts && npm install",
+        "install:frontend": "cd frontend && npm install",
+        "clean:backend": "cd backend-ts && rm -rf node_modules dist",
+        "clean:frontend": "cd frontend && rm -rf node_modules package-lock.json",
+        "clean:all": "npm run clean:backend && npm run clean:frontend",
+        "build:backend": "cd backend-ts && npm run build",
+        "build:frontend": "cd frontend && npm run build",
+        "lint:frontend": "cd frontend && npm run lint",
+        "test:backend": "cd backend-ts && npm run type-check || echo 'Type check completed'",
+        "logs:backend": "ps aux | grep -E 'tsx|node.*main' | grep -v grep",
+        "logs:frontend": "ps aux | grep vite | grep -v grep",
+        "stop": "pkill -f 'tsx|node.*main|vite' || true",
+        "restart": "npm run stop && npm run dev",
+        "status": "echo '=== Backend Status ===' && curl -s http://localhost:8001/ && echo 'Backend OK' || echo 'Backend DOWN'; echo '=== Frontend Status ===' && curl -s http://localhost:5173/ > /dev/null && echo 'Frontend OK' || echo 'Frontend DOWN'", "test:api": "echo 'Testing API endpoints...' && curl -s http://localhost:8001/ | jq . && echo '---' && curl -s http://localhost:8001/api/conversations | jq . || echo 'API test failed'", "chats:stats": "curl -s http://localhost:8001/api/chats/stats | jq .", "chats:debug": "curl -s http://localhost:8001/api/chats/debug | jq .", "chats:export": "echo 'Usage: npm run chats:export <conversation_id>'", "chats:list": "ls -la data/conversations/ | head -10", "chats:location": "echo 'Chats stored in: data/conversations/' && ls -la data/conversations/ | wc -l && echo 'chat files'"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "keywords": [
+        "ai",
+        "llm",
+        "council",
+        "openrouter",
+        "fastapi",
+        "react"
+    ],
+    "author": "LLM Council",
+    "license": "MIT"
+}

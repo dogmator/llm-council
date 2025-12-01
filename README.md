@@ -19,11 +19,11 @@ This project was 99% vibe coded as a fun Saturday hack because I wanted to explo
 
 ### 1. Install Dependencies
 
-The project uses [uv](https://docs.astral.sh/uv/) for project management.
-
-**Backend:**
+**Backend (TypeScript):**
 ```bash
-uv sync
+cd backend-ts
+npm install
+cd ..
 ```
 
 **Frontend:**
@@ -31,6 +31,11 @@ uv sync
 cd frontend
 npm install
 cd ..
+```
+
+Or install all at once:
+```bash
+npm run install:all
 ```
 
 ### 2. Configure API Key
@@ -45,31 +50,39 @@ Get your API key at [openrouter.ai](https://openrouter.ai/). Make sure to purcha
 
 ### 3. Configure Models (Optional)
 
-Edit `backend/config.py` to customize the council:
+Edit `backend-ts/src/config.ts` to customize the council:
 
-```python
-COUNCIL_MODELS = [
-    "openai/gpt-5.1",
-    "google/gemini-3-pro-preview",
-    "anthropic/claude-sonnet-4.5",
-    "x-ai/grok-4",
-]
+```typescript
+export const COUNCIL_MODELS = [
+  "google/gemini-2.0-flash-thinking",
+  "anthropic/claude-3.5-haiku",
+  "openai/gpt-4o-mini",
+  "meta-llama/llama-3.1-8b-instruct:free",
+];
 
-CHAIRMAN_MODEL = "google/gemini-3-pro-preview"
+export const CHAIRMAN_MODEL = "google/gemini-2.0-flash";
 ```
 
 ## Running the Application
 
-**Option 1: Use the start script**
+**Option 1: Use npm script (recommended)**
+```bash
+npm run dev
+```
+
+This will start both backend and frontend concurrently.
+
+**Option 2: Use the start script**
 ```bash
 ./start.sh
 ```
 
-**Option 2: Run manually**
+**Option 3: Run manually**
 
 Terminal 1 (Backend):
 ```bash
-uv run python -m backend.main
+cd backend-ts
+npm run dev
 ```
 
 Terminal 2 (Frontend):
@@ -82,7 +95,18 @@ Then open http://localhost:5173 in your browser.
 
 ## Tech Stack
 
-- **Backend:** FastAPI (Python 3.10+), async httpx, OpenRouter API
+- **Backend:** Fastify (TypeScript), compiled with tsgo (Go-based TypeScript compiler), undici for HTTP, OpenRouter API
 - **Frontend:** React + Vite, react-markdown for rendering
 - **Storage:** JSON files in `data/conversations/`
-- **Package Management:** uv for Python, npm for JavaScript
+- **Package Management:** npm for both backend and frontend
+
+## Building for Production
+
+**Backend:**
+```bash
+cd backend-ts
+npm run build
+npm run start
+```
+
+The backend uses `tsgo` (Microsoft's Go-based TypeScript compiler) for fast compilation. You can also use standard `tsc` with `npm run build:tsc`.
