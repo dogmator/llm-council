@@ -1,0 +1,26 @@
+{
+  "name": "@llm-council/shared",
+  "version": "0.1.0",
+  "description": "Shared types and utilities for LLM Council",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": ["llm", "council", "types", "shared"],
+  "author": "LLM Council",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
